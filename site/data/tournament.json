@@ -205,6 +205,16 @@
       "backupDrivers": [
         "lenni4070"
       ]
+    },
+    {
+      "id": "t-ef21eba1-183f-46af-8b44-2fdc1a9f4c69",
+      "name": "MTA",
+      "drivers": [
+        "Domenicoaslo"
+      ],
+      "backupDrivers": [
+        "OliB85471"
+      ]
     }
   ],
   "groups": [
@@ -299,7 +309,8 @@
         "t19",
         "t21",
         "t7",
-        "t12"
+        "t12",
+        "t-ef21eba1-183f-46af-8b44-2fdc1a9f4c69"
       ],
       "races": [
         {
@@ -331,7 +342,7 @@
     }
   ],
   "finale": null,
-  "updatedAt": "2026-09-26T19:29:11.114Z",
+  "updatedAt": "2026-09-26T19:39:54.614Z",
   "pendingTeams": [
     {
       "name": "MoIA"
@@ -375,18 +386,6 @@
       ],
       "previousGroupIndex": 1,
       "removedAt": "2026-09-26T19:17:56.056Z"
-    },
-    {
-      "id": "t11",
-      "name": "MTA",
-      "drivers": [
-        "BossJoker_30"
-      ],
-      "backupDrivers": [
-        "OliB85471"
-      ],
-      "previousGroupIndex": 2,
-      "removedAt": "2026-09-26T19:29:11.114Z"
     }
   ]
 }
