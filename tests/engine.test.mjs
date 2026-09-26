@@ -7,14 +7,17 @@ function teams(count) {
   return Array.from({ length: count }, (_, i) => ({ id: `t${i + 1}`, name: `Team ${i + 1}`, drivers: [`Driver ${i + 1}`], backupDrivers: [`Backup ${i + 1}`] }));
 }
 
-test("sheet roster is loaded as 8 / 8 / 7 with five races per group", () => {
+test("sheet roster is loaded as 8 / 8 / 8 with five races per group", () => {
   const state = JSON.parse(fs.readFileSync(new URL("../site/data/tournament.json", import.meta.url), "utf8"));
   assert.equal(state.version, 2);
-  assert.equal(state.teams.length, 23);
-  assert.equal(state.pendingTeams.length, 10);
-  assert.deepEqual(state.groups.map(g => g.teamIds.length), [8, 8, 7]);
+  assert.equal(state.teams.length, 24);
+  assert.equal(state.pendingTeams.length, 9);
+  assert.deepEqual(state.groups.map(g => g.teamIds.length), [8, 8, 8]);
   assert.ok(state.groups.every(g => g.races.length === 5 && g.teamIds.length <= 20));
-  assert.equal(state.teams.reduce((n, t) => n + t.backupDrivers.length, 0), 14);
+  assert.equal(state.teams.reduce((n, t) => n + t.backupDrivers.length, 0), 15);
+  const newest = state.teams.find(team => team.name === "3GT");
+  assert.deepEqual([newest.drivers[0], ...newest.backupDrivers], ["gaillous02200", "lenni4070"]);
+  assert.equal(state.pendingTeams.some(team => team.name === "3GT"), false);
 });
 
 test("race times accept minutes and seconds with millisecond precision", () => {
