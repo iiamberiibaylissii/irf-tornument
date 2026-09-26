@@ -101,16 +101,6 @@
       "backupDrivers": []
     },
     {
-      "id": "t11",
-      "name": "MTA",
-      "drivers": [
-        "BossJoker_30"
-      ],
-      "backupDrivers": [
-        "OliB85471"
-      ]
-    },
-    {
       "id": "t12",
       "name": "98th",
       "drivers": [
@@ -222,14 +212,14 @@
       "id": "g1",
       "name": "Group A",
       "teamIds": [
-        "t6",
-        "t21",
+        "t23",
+        "t14",
+        "t10",
+        "t13",
+        "t3",
         "t4",
-        "t8",
-        "t7",
-        "t15",
-        "t9",
-        "t11"
+        "t5",
+        "t2"
       ],
       "races": [
         {
@@ -264,12 +254,12 @@
       "name": "Group B",
       "teamIds": [
         "t22",
+        "t8",
+        "t9",
+        "t-d5cd0ce4-055c-4b32-89d3-44c89512b6f1",
+        "t15",
         "t1",
-        "t20",
-        "t16",
-        "t2",
-        "t13",
-        "t10"
+        "t16"
       ],
       "races": [
         {
@@ -303,14 +293,13 @@
       "id": "g3",
       "name": "Group C",
       "teamIds": [
+        "t17",
+        "t20",
+        "t6",
         "t19",
-        "t14",
-        "t-d5cd0ce4-055c-4b32-89d3-44c89512b6f1",
-        "t12",
-        "t3",
-        "t23",
-        "t5",
-        "t17"
+        "t21",
+        "t7",
+        "t12"
       ],
       "races": [
         {
@@ -342,7 +331,7 @@
     }
   ],
   "finale": null,
-  "updatedAt": "2026-09-26T19:19:39.716Z",
+  "updatedAt": "2026-09-26T19:29:11.114Z",
   "pendingTeams": [
     {
       "name": "MoIA"
@@ -373,7 +362,7 @@
     }
   ],
   "sourceSheet": "https://docs.google.com/spreadsheets/d/1mRMH_qbFPpdQ7RjJJYKD-PuHKDZqrwQWfihtoj4Nt_o/edit?gid=0#gid=0",
-  "drawNumber": 3,
+  "drawNumber": 4,
   "inactiveTeams": [
     {
       "id": "t18",
@@ -386,6 +375,18 @@
       ],
       "previousGroupIndex": 1,
       "removedAt": "2026-09-26T19:17:56.056Z"
+    },
+    {
+      "id": "t11",
+      "name": "MTA",
+      "drivers": [
+        "BossJoker_30"
+      ],
+      "backupDrivers": [
+        "OliB85471"
+      ],
+      "previousGroupIndex": 2,
+      "removedAt": "2026-09-26T19:29:11.114Z"
     }
   ]
 }
