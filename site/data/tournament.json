@@ -165,16 +165,6 @@
       "backupDrivers": []
     },
     {
-      "id": "t18",
-      "name": "QM",
-      "drivers": [
-        "aquanthea"
-      ],
-      "backupDrivers": [
-        "Lava_Wars6829"
-      ]
-    },
-    {
       "id": "t19",
       "name": "GA",
       "drivers": [
@@ -274,7 +264,6 @@
       "name": "Group B",
       "teamIds": [
         "t22",
-        "t18",
         "t8",
         "t9",
         "t-d5cd0ce4-055c-4b32-89d3-44c89512b6f1",
@@ -353,7 +342,7 @@
     }
   ],
   "finale": null,
-  "updatedAt": "2026-09-26T18:53:02.121Z",
+  "updatedAt": "2026-09-26T19:17:56.062Z",
   "pendingTeams": [
     {
       "name": "MoIA"
@@ -385,5 +374,18 @@
   ],
   "sourceSheet": "https://docs.google.com/spreadsheets/d/1mRMH_qbFPpdQ7RjJJYKD-PuHKDZqrwQWfihtoj4Nt_o/edit?gid=0#gid=0",
   "drawNumber": 2,
-  "inactiveTeams": []
+  "inactiveTeams": [
+    {
+      "id": "t18",
+      "name": "QM",
+      "drivers": [
+        "aquanthea"
+      ],
+      "backupDrivers": [
+        "Lava_Wars6829"
+      ],
+      "previousGroupIndex": 1,
+      "removedAt": "2026-09-26T19:17:56.056Z"
+    }
+  ]
 }
