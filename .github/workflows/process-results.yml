@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   process:
-    if: startsWith(github.event.issue.title, '[Race result]')
+    if: startsWith(github.event.issue.title, '[Race result]') || startsWith(github.event.issue.title, '[Group draw]') || startsWith(github.event.issue.title, '[Group started]')
     runs-on: ubuntu-latest
     steps:
       - name: Check out trusted tournament code

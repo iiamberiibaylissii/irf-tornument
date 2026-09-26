@@ -25,7 +25,7 @@ export function teamLine(team) {
   return `${team.name} | ${[team.drivers[0], ...(team.backupDrivers || [])].join(", ")}`;
 }
 
-function newRace(number) { return { number, times: null, driverSelections: {} }; }
+function newRace(number) { return { number, times: null, rawTimes: null, penalties: {}, driverSelections: {} }; }
 
 export function makeTournament(name, teams, finalRaces = 1) {
   if (!Array.isArray(teams) || teams.length < 6) throw new Error("Enter at least six teams.");
@@ -33,7 +33,7 @@ export function makeTournament(name, teams, finalRaces = 1) {
   if (Math.ceil(teams.length / 3) > SERVER_CAPACITY) throw new Error("A group would exceed 20 drivers per server.");
   const groups = Array.from({ length: GROUP_COUNT }, (_, index) => ({
     id: `g${index + 1}`, name: `Group ${String.fromCharCode(65 + index)}`,
-    teamIds: [], races: Array.from({ length: GROUP_RACES }, (_, i) => newRace(i + 1))
+    teamIds: [], startedAt: null, races: Array.from({ length: GROUP_RACES }, (_, i) => newRace(i + 1))
   }));
   teams.forEach((team, index) => groups[index % GROUP_COUNT].teamIds.push(team.id));
   return {
@@ -62,6 +62,65 @@ export function formatTime(ms) {
 }
 
 export function teamMap(state) { return new Map(state.teams.map(team => [team.id, team])); }
+
+export function groupStarted(group) {
+  return !!group.startedAt || group.races.some(race => race.times != null);
+}
+
+function secureIndex(max) {
+  const range = 0x100000000;
+  const ceiling = Math.floor(range / max) * max;
+  const sample = new Uint32Array(1);
+  do { crypto.getRandomValues(sample); } while (sample[0] >= ceiling);
+  return sample[0] % max;
+}
+
+export function applyGroupDraw(state, proposedGroups) {
+  if (!Array.isArray(proposedGroups) || proposedGroups.length !== GROUP_COUNT) throw new Error("A draw must contain all three groups.");
+  if (proposedGroups.some(ids => !Array.isArray(ids))) throw new Error("A draw must list the drivers in each group.");
+  const original = state.groups.flatMap(group => group.teamIds);
+  const proposed = proposedGroups.flat();
+  if (proposedGroups.some((ids, index) => !Array.isArray(ids) || ids.length !== state.groups[index].teamIds.length ||
+      (groupStarted(state.groups[index]) && ids.join() !== state.groups[index].teamIds.join())) ||
+      proposed.length !== original.length ||
+      proposed.slice().sort().join() !== original.slice().sort().join()) {
+    throw new Error("The draw changes a started group, group size, or team list.");
+  }
+  const next = structuredClone(state);
+  next.groups.forEach((group, index) => { group.teamIds = [...proposedGroups[index]]; });
+  next.drawNumber = (next.drawNumber || 0) + 1;
+  next.updatedAt = new Date().toISOString();
+  return next;
+}
+
+export function shuffleUnstartedGroups(state, pick = secureIndex) {
+  const eligible = state.groups.map((group, index) => groupStarted(group) ? -1 : index).filter(index => index >= 0);
+  if (!eligible.length) throw new Error("Every group has started, so the draw is locked.");
+  const pool = eligible.flatMap(index => state.groups[index].teamIds);
+  const shuffled = [...pool];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = pick(i + 1);
+    if (!Number.isInteger(j) || j < 0 || j > i) throw new Error("The random draw failed.");
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  if (shuffled.join() === pool.join() && shuffled.length > 1) shuffled.push(shuffled.shift());
+  const proposed = state.groups.map(group => [...group.teamIds]);
+  let offset = 0;
+  for (const index of eligible) {
+    proposed[index] = shuffled.slice(offset, offset + state.groups[index].teamIds.length);
+    offset += state.groups[index].teamIds.length;
+  }
+  return applyGroupDraw(state, proposed);
+}
+
+export function markGroupStarted(state, groupIndex) {
+  const group = state.groups[groupIndex];
+  if (!group || groupStarted(group)) throw new Error("This group has already started or does not exist.");
+  const next = structuredClone(state);
+  next.groups[groupIndex].startedAt = new Date().toISOString();
+  next.updatedAt = new Date().toISOString();
+  return next;
+}
 
 export function raceComplete(race, teamIds) {
   return !!race.times && teamIds.every(id => Number.isSafeInteger(race.times[id]) && race.times[id] > 0);
@@ -126,21 +185,34 @@ export function setRaceDrivers(state, stage, groupIndex, raceIndex, selections) 
   return next;
 }
 
-export function recordTimes(state, stage, groupIndex, raceIndex, values, selections = null) {
+export function recordTimes(state, stage, groupIndex, raceIndex, values, selections = null, penalties = {}) {
   const next = structuredClone(state);
   const entry = getStage(next, stage, groupIndex);
   const race = entry?.races[raceIndex];
   if (!race) throw new Error("Race not found.");
-  const times = {};
+  if (!penalties || typeof penalties !== "object" || Array.isArray(penalties) ||
+      Object.keys(penalties).some(id => !entry.teamIds.includes(id))) throw new Error("Penalties include a driver outside this race.");
+  const times = {}, rawTimes = {}, normalizedPenalties = {};
   for (const id of entry.teamIds) {
     if (!Object.hasOwn(values, id)) throw new Error("Enter an official time for every driver in this race.");
-    times[id] = typeof values[id] === "number" ? values[id] : parseTime(values[id]);
-    if (!Number.isSafeInteger(times[id]) || times[id] <= 0) throw new Error("Every race time must be greater than zero.");
+    rawTimes[id] = typeof values[id] === "number" ? values[id] : parseTime(values[id]);
+    if (!Number.isSafeInteger(rawTimes[id]) || rawTimes[id] <= 0) throw new Error("Every race time must be greater than zero.");
+    const driverPenalties = penalties[id] ?? [];
+    if (!Array.isArray(driverPenalties) || driverPenalties.length > 100 ||
+        driverPenalties.some(value => value !== 100 && value !== 200)) throw new Error("Only 0.1 and 0.2 second penalties can be added.");
+    normalizedPenalties[id] = [...driverPenalties];
+    times[id] = rawTimes[id] + driverPenalties.reduce((sum, value) => sum + value, 0);
+    if (!Number.isSafeInteger(times[id])) throw new Error("The adjusted race time is too large.");
   }
   if (Object.keys(values).length !== entry.teamIds.length) throw new Error("Times include a driver outside this race.");
   if (selections) { checkSelections(next, entry.teamIds, selections); race.driverSelections = { ...selections }; }
   race.times = times;
-  if (stage === "group") next.finale = syncedFinale(next, next.finale);
+  race.rawTimes = rawTimes;
+  race.penalties = normalizedPenalties;
+  if (stage === "group") {
+    next.groups[groupIndex].startedAt ||= new Date().toISOString();
+    next.finale = syncedFinale(next, next.finale);
+  }
   next.updatedAt = new Date().toISOString();
   return next;
 }

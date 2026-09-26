@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { parseTeams, makeTournament, parseTime, formatTime, recordTimes, setRaceDrivers, groupStandings, groupQualifiers, qualificationIssue, winner } from "../site/engine.mjs";
+import { parseTeams, makeTournament, parseTime, formatTime, recordTimes, setRaceDrivers, groupStandings, groupQualifiers, qualificationIssue, winner, shuffleUnstartedGroups, applyGroupDraw, markGroupStarted, groupStarted } from "../site/engine.mjs";
 
 function teams(count) {
   return Array.from({ length: count }, (_, i) => ({ id: `t${i + 1}`, name: `Team ${i + 1}`, drivers: [`Driver ${i + 1}`], backupDrivers: [`Backup ${i + 1}`] }));
@@ -24,6 +24,52 @@ test("race times accept minutes and seconds with millisecond precision", () => {
   assert.equal(formatTime(83456), "1:23.456");
   assert.throws(() => parseTime("1:65.00"), /Invalid time/);
   assert.throws(() => parseTime("0"), /greater than zero/);
+});
+
+test("draw keeps 8 / 8 / 7 and every entrant while shuffling unlocked groups", () => {
+  const original = makeTournament("Cup", teams(23));
+  const drawn = shuffleUnstartedGroups(original, () => 0);
+  assert.deepEqual(drawn.groups.map(group => group.teamIds.length), [8, 8, 7]);
+  assert.deepEqual(drawn.groups.flatMap(group => group.teamIds).sort(), original.groups.flatMap(group => group.teamIds).sort());
+  assert.notDeepEqual(drawn.groups.map(group => group.teamIds), original.groups.map(group => group.teamIds));
+  assert.deepEqual(original.groups.map(group => groupStarted(group)), [false, false, false]);
+});
+
+test("a started group is locked while the remaining groups can still be shuffled", () => {
+  let state = makeTournament("Cup", teams(23));
+  state = markGroupStarted(state, 0);
+  const locked = state.groups[0].teamIds;
+  const drawn = shuffleUnstartedGroups(state, () => 0);
+  assert.deepEqual(drawn.groups[0].teamIds, locked);
+  assert.notDeepEqual(drawn.groups.slice(1).map(group => group.teamIds), state.groups.slice(1).map(group => group.teamIds));
+  assert.throws(() => applyGroupDraw(state, [state.groups[1].teamIds, state.groups[0].teamIds, state.groups[2].teamIds]), /started group|group size/);
+  assert.throws(() => markGroupStarted(state, 0), /already started/);
+  state = markGroupStarted(state, 1);
+  state = markGroupStarted(state, 2);
+  assert.throws(() => shuffleUnstartedGroups(state), /locked/);
+});
+
+test("first posted race automatically locks that group", () => {
+  let state = makeTournament("Cup", teams(23));
+  const ids = state.groups[1].teamIds;
+  state = recordTimes(state, "group", 1, 0, Object.fromEntries(ids.map(id => [id, "1:00.000"])));
+  assert.equal(groupStarted(state.groups[1]), true);
+  const next = shuffleUnstartedGroups(state, () => 0);
+  assert.deepEqual(next.groups[1].teamIds, ids);
+});
+
+test("manual penalty buttons add exactly 0.1 or 0.2 seconds to official times", () => {
+  const state = makeTournament("Cup", teams(6));
+  const ids = state.groups[0].teamIds;
+  const values = Object.fromEntries(ids.map(id => [id, "1:00.000"]));
+  const next = recordTimes(state, "group", 0, 0, values, null, { [ids[0]]: [100, 200, 100] });
+  const race = next.groups[0].races[0];
+  assert.equal(race.rawTimes[ids[0]], 60000);
+  assert.equal(race.times[ids[0]], 60400);
+  assert.equal(race.times[ids[1]], 60000);
+  assert.deepEqual(race.penalties[ids[0]], [100, 200, 100]);
+  assert.equal(groupStandings(next.groups[0])[0].id, ids[1]);
+  assert.throws(() => recordTimes(state, "group", 0, 0, values, null, { [ids[0]]: [300] }), /Only 0.1 and 0.2/);
 });
 
 test("lowest total over five races sends two from each group to the finale", () => {

@@ -222,14 +222,14 @@
       "id": "g1",
       "name": "Group A",
       "teamIds": [
-        "t1",
-        "t4",
-        "t7",
-        "t10",
-        "t13",
-        "t16",
         "t19",
-        "t22"
+        "t11",
+        "t10",
+        "t8",
+        "t4",
+        "t5",
+        "t20",
+        "t18"
       ],
       "races": [
         {
@@ -263,14 +263,14 @@
       "id": "g2",
       "name": "Group B",
       "teamIds": [
-        "t2",
-        "t5",
-        "t8",
-        "t11",
-        "t14",
+        "t16",
         "t17",
-        "t20",
-        "t23"
+        "t23",
+        "t22",
+        "t13",
+        "t7",
+        "t2",
+        "t1"
       ],
       "races": [
         {
@@ -304,13 +304,13 @@
       "id": "g3",
       "name": "Group C",
       "teamIds": [
-        "t3",
-        "t6",
+        "t21",
         "t9",
+        "t14",
+        "t3",
         "t12",
         "t15",
-        "t18",
-        "t21"
+        "t6"
       ],
       "races": [
         {
@@ -342,7 +342,7 @@
     }
   ],
   "finale": null,
-  "updatedAt": "2026-09-26T17:21:30.378Z",
+  "updatedAt": "2026-09-26T18:24:27.320Z",
   "pendingTeams": [
     {
       "name": "MoIA"
@@ -375,5 +375,6 @@
       "name": "CDP"
     }
   ],
-  "sourceSheet": "https://docs.google.com/spreadsheets/d/1mRMH_qbFPpdQ7RjJJYKD-PuHKDZqrwQWfihtoj4Nt_o/edit?gid=0#gid=0"
+  "sourceSheet": "https://docs.google.com/spreadsheets/d/1mRMH_qbFPpdQ7RjJJYKD-PuHKDZqrwQWfihtoj4Nt_o/edit?gid=0#gid=0",
+  "drawNumber": 1
 }

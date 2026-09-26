@@ -6,6 +6,8 @@ A GitHub Pages tournament board with a separate judges page. The starting roster
 
 - **23 drivers** start in three groups of **8, 8 and 7**. Each group is below the 20-player server limit. Ten departments without a Main Driver are listed as pending and are outside the grid.
 - Each group runs **five timed qualifying races**. An official time is entered for every driver in each race using `m:ss.mmm` or `seconds.mmm`.
+- Judges enter the time recorded by the game. Each press of **+0.1s** or **+0.2s** adds that penalty to the driver's time; **Undo last** removes the most recent press. Standings use the adjusted times.
+- Judges can shuffle the starting grid while groups have not started. A group is locked when a judge marks it started or posts its first race result; later draws only change remaining unstarted groups.
 - The five times are **added**. The **two lowest total times from each group** qualify for the six-driver finale.
 - The finale is currently set to **one timed race**. The lowest finale time wins. The engine also supports a five-race finale if the organizer decides to use one.
 - An exact tie at the qualifying cutoff or for the championship is flagged. The site does not choose an unapproved tiebreaker.
@@ -32,8 +34,8 @@ The repository owner can also submit. Judges need a GitHub account, but they **d
 
 ## Judge workflow
 
-1. Open the separate judges link and select the group and race.
-2. Enter each driver’s official time and choose a backup if that driver raced instead.
+1. Open the separate judges link. If needed, use **Shuffle** and confirm the proposed draw on GitHub. Mark each group **started** when racing begins and confirm that on GitHub; its drivers will then stay in place.
+2. Select a group and race. Enter each driver's game time, choose any backup, and press **+0.1s** or **+0.2s** for each infraction. Use **Undo last** to correct a press.
 3. Click **Review & submit on GitHub**. The next page is prefilled. Sign in to GitHub if asked, check the times, and click **Create**.
 4. GitHub posts a confirmation on that submission and publishes the updated public board shortly afterward. Refresh the judges page before preparing another race so it uses the latest results.
 

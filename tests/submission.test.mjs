@@ -13,12 +13,12 @@ const payload = {
   expectedRaceTimes: null, values, selections
 };
 
-async function runSubmission({ login = "owner", association = "OWNER", submitted = payload, current = fixture } = {}) {
+async function runSubmission({ login = "owner", association = "OWNER", submitted = payload, current = fixture, action = "race" } = {}) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "race-submission-"));
   const eventPath = path.join(directory, "event.json");
   const issue = {
-    number: 42, title: "[Race result] Group A race 1", user: { login }, author_association: association,
-    body: `Race times\n\n<!-- RACE_CONTROL_RESULT_V1\n${JSON.stringify(submitted)}\n-->`
+    number: 42, title: action === "draw" ? "[Group draw] Shuffle unstarted groups" : action === "lock" ? "[Group started] Group A" : "[Race result] Group A race 1", user: { login }, author_association: association,
+    body: `Race control\n\n<!-- ${action === "race" ? "RACE_CONTROL_RESULT_V1" : "RACE_CONTROL_GROUP_ACTION_V1"}\n${JSON.stringify(submitted)}\n-->`
   };
   fs.writeFileSync(eventPath, JSON.stringify({ issue }));
   const savedEnvironment = {
@@ -64,6 +64,49 @@ test("approved judge submission saves times, confirms, and closes the issue", as
   assert.equal(updated.groups[0].races[0].driverSelections[ids[0]], selections[ids[0]]);
   assert.ok(result.calls.some(call => call.method === "POST" && call.body.body.includes("accepted")));
   assert.ok(result.calls.some(call => call.method === "PATCH" && call.body.state === "closed"));
+});
+
+test("approved result saves raw time and button penalties separately", async () => {
+  const submitted = { ...payload, penalties: { [ids[0]]: [100, 200] }, expectedTeamIds: ids };
+  const result = await runSubmission({ submitted });
+  assert.equal(result.exitCode, 0);
+  const put = result.calls.find(call => call.method === "PUT");
+  const updated = JSON.parse(Buffer.from(put.body.content, "base64").toString("utf8"));
+  assert.equal(updated.groups[0].races[0].rawTimes[ids[0]], 80000);
+  assert.equal(updated.groups[0].races[0].times[ids[0]], 80300);
+  assert.deepEqual(updated.groups[0].races[0].penalties[ids[0]], [100, 200]);
+});
+
+test("approved group draw publishes only the proposed unlocked grid", async () => {
+  const proposed = fixture.groups.map(group => [...group.teamIds]);
+  [proposed[0][0], proposed[1][0]] = [proposed[1][0], proposed[0][0]];
+  const submitted = { action: "draw", edition: fixture.edition, expectedGroups: fixture.groups, groups: proposed };
+  const result = await runSubmission({ submitted, action: "draw" });
+  assert.equal(result.exitCode, 0);
+  const put = result.calls.find(call => call.method === "PUT");
+  const updated = JSON.parse(Buffer.from(put.body.content, "base64").toString("utf8"));
+  assert.deepEqual(updated.groups.map(group => group.teamIds), proposed);
+  assert.ok(updated.drawNumber >= 1);
+});
+
+test("a draw prepared before a group starts cannot replace its drivers", async () => {
+  const proposed = fixture.groups.map(group => [...group.teamIds]);
+  [proposed[0][0], proposed[1][0]] = [proposed[1][0], proposed[0][0]];
+  const submitted = { action: "draw", edition: fixture.edition, expectedGroups: fixture.groups, groups: proposed };
+  const current = structuredClone(fixture);
+  current.groups[0].startedAt = new Date().toISOString();
+  const result = await runSubmission({ submitted, current, action: "draw" });
+  assert.equal(result.exitCode, 1);
+  assert.equal(result.calls.some(call => call.method === "PUT"), false);
+});
+
+test("approved judge can lock a group before its first result", async () => {
+  const submitted = { action: "start-group", edition: fixture.edition, groupIndex: 0, expectedGroup: fixture.groups[0] };
+  const result = await runSubmission({ submitted, action: "lock" });
+  assert.equal(result.exitCode, 0);
+  const put = result.calls.find(call => call.method === "PUT");
+  const updated = JSON.parse(Buffer.from(put.body.content, "base64").toString("utf8"));
+  assert.ok(updated.groups[0].startedAt);
 });
 
 test("unapproved GitHub account cannot publish a result", async () => {

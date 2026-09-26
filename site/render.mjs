@@ -1,4 +1,4 @@
-import { teamMap, groupStandings, groupComplete, groupQualifiers, raceComplete, formatTime, finalStandings, winner, qualificationIssue, finalTieIssue } from "./engine.mjs";
+import { teamMap, groupStandings, groupComplete, groupQualifiers, groupStarted, raceComplete, formatTime, finalStandings, winner, qualificationIssue, finalTieIssue } from "./engine.mjs";
 
 export function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" })[c]);
@@ -29,7 +29,8 @@ function raceDetail(race, teamIds, state) {
   const ordered = [...teamIds].sort((a, b) => race.times[a] - race.times[b]);
   return `<div class="race-detail-list">${ordered.map((id, index) => {
     const team = map.get(id), driver = race.driverSelections?.[id] || team.drivers[0];
-    return `<div><span>${index + 1}</span><strong>${escapeHtml(team.name)}</strong><small>${escapeHtml(driver)}</small><b>${formatTime(race.times[id])}</b></div>`;
+    const penalty = race.rawTimes?.[id] != null ? race.times[id] - race.rawTimes[id] : 0;
+    return `<div><span>${index + 1}</span><strong>${escapeHtml(team.name)}</strong><small>${escapeHtml(driver)}${penalty ? ` · +${formatTime(penalty)}` : ""}</small><b>${formatTime(race.times[id])}</b></div>`;
   }).join("")}</div>`;
 }
 
@@ -46,8 +47,8 @@ export function groupCard(group, state, groupIndex, options = {}) {
   const done = group.races.filter(race => raceComplete(race, group.teamIds)).length;
   const qualifiers = groupQualifiers(group) || [];
   const rows = groupStandings(group);
-  return `<article class="group-card"><div class="group-top"><div><span class="kicker">QUALIFYING SERVER ${groupIndex + 1}</span><h3>${escapeHtml(group.name)}</h3></div><span class="race-status ${done === 5 ? "done" : ""}">${done} / 5 RACES</span></div>
-    <div class="group-meta">${group.teamIds.length} DRIVERS · TOP 2 ADVANCE · LOWEST TOTAL TIME</div>
+  return `<article class="group-card ${options.editor ? "is-editing" : ""}"><div class="group-top"><div><span class="kicker">QUALIFYING SERVER ${groupIndex + 1}</span><h3>${escapeHtml(group.name)}</h3></div><span class="race-status ${done === 5 ? "done" : ""}">${done} / 5 RACES</span></div>
+    <div class="group-meta">${group.teamIds.length} DRIVERS · TOP 2 ADVANCE · LOWEST TOTAL TIME · ${groupStarted(group) ? "DRAW LOCKED" : "DRAW OPEN"}</div>
     ${racesMarkup(group, state, "group", groupIndex, !!options.judge)}
     <div class="standings-head"><span>${groupComplete(group) ? "FINAL STANDINGS" : "CURRENT TOTALS"}</span><span>TIME</span></div>
     <div class="standings">${rows.map((row, index) => {
@@ -61,7 +62,7 @@ export function finaleCard(state, options = {}) {
   const finale = state.finale, map = teamMap(state);
   const ordered = finalStandings(state) || finale.teamIds.map(id => ({ id, total: null }));
   const done = finale.races.filter(race => raceComplete(race, finale.teamIds)).length;
-  return `<article class="group-card finale-card"><div class="group-top"><div><span class="kicker">THE CHAMPIONSHIP</span><h3>Finale</h3></div><span class="race-status ${done === finale.races.length ? "done" : ""}">${done} / ${finale.races.length} RACES</span></div>
+  return `<article class="group-card finale-card ${options.editor ? "is-editing" : ""}"><div class="group-top"><div><span class="kicker">THE CHAMPIONSHIP</span><h3>Finale</h3></div><span class="race-status ${done === finale.races.length ? "done" : ""}">${done} / ${finale.races.length} RACES</span></div>
     <div class="group-meta">6 DRIVERS · LOWEST ${finale.races.length === 1 ? "RACE" : "COMBINED"} TIME WINS</div>
     ${racesMarkup(finale, state, "finale", 0, !!options.judge)}
     <div class="standings-head"><span>FINALISTS</span><span>TIME</span></div>
