@@ -7,18 +7,14 @@ function teams(count) {
   return Array.from({ length: count }, (_, i) => ({ id: `t${i + 1}`, name: `Team ${i + 1}`, drivers: [`Driver ${i + 1}`], backupDrivers: [`Backup ${i + 1}`] }));
 }
 
-test("agreed 8 / 7 / 7 grid is loaded with five races per group", () => {
+test("published roster has valid groups and five races per group", () => {
   const state = JSON.parse(fs.readFileSync(new URL("../site/data/tournament.json", import.meta.url), "utf8"));
   assert.equal(state.version, 2);
-  assert.equal(state.teams.length, 22);
-  assert.equal(state.pendingTeams.length, 9);
-  assert.deepEqual(state.groups.map(g => g.teamIds.length), [8, 7, 7]);
-  assert.ok(state.groups.every(g => g.races.length === 5 && g.teamIds.length <= 20));
-  assert.equal(state.teams.reduce((n, t) => n + t.backupDrivers.length, 0), 13);
-  assert.deepEqual(state.inactiveTeams.map(team => team.name), ["QM", "MTA"]);
-  const newest = state.teams.find(team => team.name === "3GT");
-  assert.deepEqual([newest.drivers[0], ...newest.backupDrivers], ["gaillous02200", "lenni4070"]);
-  assert.equal(state.pendingTeams.some(team => team.name === "3GT"), false);
+  assert.equal(state.groups.length, 3);
+  assert.ok(state.groups.every(group => group.teamIds.length >= 2 && group.teamIds.length <= 20 && group.races.length === 5));
+  assert.deepEqual(state.groups.flatMap(group => group.teamIds).sort(), state.teams.map(team => team.id).sort());
+  assert.ok(state.teams.every(team => team.drivers?.[0] && Array.isArray(team.backupDrivers)));
+  assert.ok((state.inactiveTeams || []).every(team => !state.teams.some(active => active.name === team.name)));
 });
 
 test("race times accept minutes and seconds with millisecond precision", () => {

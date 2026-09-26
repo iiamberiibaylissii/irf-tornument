@@ -4,7 +4,7 @@ A GitHub Pages tournament board with a separate judges page. The starting roster
 
 ## Tournament rules
 
-- **22 drivers** are on the agreed grid in three groups of **8, 7 and 7**. Each group is below the 20-player server limit. QM and MTA have withdrawn and remain available under previously removed teams. Nine departments without a Main Driver are listed as pending and are outside the grid. 3GT is in Group B with Main Driver `gaillous02200` and backup `lenni4070`.
+- The published roster is saved in `site/data/tournament.json` and shown on the public board. Three groups each stay below the 20-player server limit. Departments awaiting a Main Driver remain outside the grid until a judge adds them.
 - Each group runs **five timed qualifying races**. An official time is entered for every driver in each race using `m:ss.mmm` or `seconds.mmm`.
 - Judges enter the time recorded by the game. Each press of **+0.1s** or **+0.2s** adds that penalty to the driver's time; **Undo last** removes the most recent press. Standings use the adjusted times.
 - Judges can shuffle the starting grid while groups have not started. A group is locked when a judge marks it started or posts its first race result; later draws only change remaining unstarted groups.
