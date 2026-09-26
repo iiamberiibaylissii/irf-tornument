@@ -12,13 +12,13 @@ A GitHub Pages tournament board with a separate judges page. The starting roster
 
 Judges may submit a corrected time. If a correction changes the six finalists, existing finale results are cleared. GitHub commit history keeps earlier versions.
 
-## Publish on GitHub
+## Website
 
-1. Create a **public** GitHub repository, for example `racing-tournament`, with `main` as its default branch. Keep **Issues** and **Actions** enabled.
-2. Upload all the files in this folder, preserving `site`, `scripts`, `config`, `tests`, and `.github/workflows`. Do not upload the parent `outputs` folder.
-3. In **Settings → Pages**, set **Source** to **GitHub Actions**. The included workflows deploy the site and process judges' results.
-4. The public board will be `https://YOUR-NAME.github.io/racing-tournament/`. The separate judges link will be `https://YOUR-NAME.github.io/racing-tournament/judges.html`.
-5. For a custom domain, set `owner` and `repo` in `site/config.js` so the judges page opens the correct GitHub repository.
+- Public board: https://iiamberiibaylissii.github.io/irf-tornument/
+- Separate judges page: https://iiamberiibaylissii.github.io/irf-tornument/judges.html
+- Source repository: https://github.com/iiamberiibaylissii/irf-tornument
+
+GitHub Pages is configured to publish from GitHub Actions. The included workflows deploy the site and process judges' results. Keep Issues enabled so judges can submit times.
 
 ## Approve judges
 
