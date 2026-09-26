@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import { recordTimes, applyGroupDraw, markGroupStarted } from "../site/engine.mjs";
+import { recordTimes, applyGroupDraw, markGroupStarted, addTeam, removeTeam, resetScores } from "../site/engine.mjs";
 
 const event = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH, "utf8"));
 const issue = event.issue;
@@ -36,9 +36,16 @@ function payloadFromIssue() {
   }
   if (typeof issue.body !== "string" || issue.body.length > 20000) throw new Error("The race submission is missing or too long.");
   const control = issue.body.match(/<!-- RACE_CONTROL_GROUP_ACTION_V1\r?\n([\s\S]*?)\r?\n-->/);
-  const match = control || issue.body.match(/<!-- RACE_CONTROL_RESULT_V1\r?\n([\s\S]*?)\r?\n-->/);
+  const admin = issue.body.match(/<!-- RACE_CONTROL_ADMIN_V1\r?\n([\s\S]*?)\r?\n-->/);
+  const match = admin || control || issue.body.match(/<!-- RACE_CONTROL_RESULT_V1\r?\n([\s\S]*?)\r?\n-->/);
   if (!match) throw new Error("The race submission is incomplete. Prepare it again from the judges page.");
   const payload = JSON.parse(match[1]);
+  if (admin) {
+    if (!payload || typeof payload !== "object" || !["add-team", "remove-team", "reset-request"].includes(payload.action) ||
+        typeof payload.edition !== "string" || typeof payload.expectedUpdatedAt !== "string") throw new Error("The roster or reset request has an invalid format.");
+    if (payload.action === "reset-request" && issue.author_association !== "OWNER") throw new Error("Only the repository owner can request a score reset.");
+    return payload;
+  }
   if (control) {
     if (payload?.action === "draw" && Array.isArray(payload.expectedGroups) && Array.isArray(payload.groups)) return payload;
     if (payload?.action === "start-group" && Number.isInteger(payload.groupIndex) && payload.expectedGroup) return payload;
@@ -64,7 +71,19 @@ async function publish(payload) {
     const state = JSON.parse(Buffer.from(current.body.content.replace(/\s/g, ""), "base64").toString("utf8"));
     if (state.version !== 2 || state.edition !== payload.edition) throw new Error("This submission is for an older tournament. Refresh the judges page and submit again.");
     let next, message;
-    if (payload.action === "draw") {
+    if (["add-team", "remove-team", "reset-confirm"].includes(payload.action)) {
+      if (state.updatedAt !== payload.expectedUpdatedAt) throw new Error("The tournament changed after this request was prepared. Refresh the judges page and try again.");
+      if (payload.action === "add-team") {
+        next = addTeam(state, { ...payload.team, groupIndex: payload.groupIndex });
+        message = `Add team from issue #${issue.number}`;
+      } else if (payload.action === "remove-team") {
+        next = removeTeam(state, { teamId: payload.teamId, groupIndex: payload.groupIndex });
+        message = `Remove team from issue #${issue.number}`;
+      } else {
+        next = resetScores(state);
+        message = `Owner-confirmed score reset from issue #${issue.number}`;
+      }
+    } else if (payload.action === "draw") {
       if (JSON.stringify(state.groups) !== JSON.stringify(payload.expectedGroups)) throw new Error("The groups changed after this draw was prepared. Refresh and draw again.");
       next = applyGroupDraw(state, payload.groups);
       message = `Shuffle unstarted groups from issue #${issue.number}`;
@@ -96,13 +115,32 @@ async function publish(payload) {
 
 try {
   const payload = payloadFromIssue();
-  await publish(payload);
-  await comment(`✅ ${payload.action === "draw" ? "The group draw" : payload.action === "start-group" ? "The group lock" : "Official race times"} was accepted and saved. The public board will refresh after GitHub Pages publishes the update.`);
-  const closed = await api(`issues/${issue.number}`, { method: "PATCH", body: JSON.stringify({ state: "closed", state_reason: "completed" }) });
-  if (!closed.ok) console.error(`Could not close issue: ${closed.status}`);
-  console.log(`Published race result from issue #${issue.number}`);
+  if (event.comment) {
+    const confirmation = `CONFIRM RESET ${payload.edition}`;
+    if (payload.action !== "reset-request" || issue.state !== "open" ||
+        event.comment.author_association !== "OWNER" ||
+        event.comment.user?.login?.toLowerCase() !== issue.user?.login?.toLowerCase() ||
+        String(event.comment.body || "").trim() !== confirmation) throw new Error("Reset confirmation was not accepted. The repository owner must post the exact confirmation phrase on the open reset issue.");
+    await publish({ ...payload, action: "reset-confirm" });
+    await comment("✅ The repository owner confirmed the score reset. All race scores and group-start locks were cleared; the roster and group draw were kept.");
+  } else if (payload.action === "reset-request") {
+    const current = await api(`contents/site/data/tournament.json?ref=${branch}`);
+    if (!current.ok || !current.body.content) throw new Error("Could not check the current tournament.");
+    const state = JSON.parse(Buffer.from(current.body.content.replace(/\s/g, ""), "base64").toString("utf8"));
+    if (state.edition !== payload.edition || state.updatedAt !== payload.expectedUpdatedAt) throw new Error("The tournament changed since this reset was prepared. Refresh the judges page and start over.");
+    await comment(`⚠️ **No scores have been reset yet.** The repository owner must add a new comment on this issue containing exactly:\n\n\`CONFIRM RESET ${payload.edition}\`\n\nThis clears every group and finale score and unlocks the groups. It keeps the current roster and draw. If any result or roster change is saved before that comment is processed, the reset is refused. Close this issue to cancel.`);
+    console.log(`Reset request #${issue.number} is awaiting owner confirmation.`);
+  } else {
+    await publish(payload);
+    await comment(`✅ ${payload.action === "draw" ? "The group draw" : payload.action === "start-group" ? "The group lock" : payload.action === "add-team" ? "The added team" : payload.action === "remove-team" ? "The removed team" : "Official race times"} was accepted and saved. The public board will refresh after GitHub Pages publishes the update.`);
+  }
+  if (payload.action !== "reset-request" || event.comment) {
+    const closed = await api(`issues/${issue.number}`, { method: "PATCH", body: JSON.stringify({ state: "closed", state_reason: "completed" }) });
+    if (!closed.ok) console.error(`Could not close issue: ${closed.status}`);
+  }
+  console.log(`Processed tournament issue #${issue.number}`);
 } catch (error) {
-  await comment(`❌ Race times were not published: ${error.message}\n\nPlease return to the judges page, refresh the results and submit again. If your GitHub username is not approved, contact the organizer.`);
+  await comment(`❌ No tournament change was published: ${error.message}\n\nPlease refresh the judges page and try again. If your GitHub username is not approved, contact the organizer.`);
   console.error(error.message);
   process.exitCode = 1;
 }

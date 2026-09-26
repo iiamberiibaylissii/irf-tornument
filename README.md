@@ -14,6 +14,18 @@ A GitHub Pages tournament board with a separate judges page. The starting roster
 
 Judges may submit a corrected time. If a correction changes the six finalists, existing finale results are cleared. GitHub commit history keeps earlier versions.
 
+## Playing across two days
+
+Each accepted race result is saved to `site/data/tournament.json` in GitHub and published on both pages. The next day, open the same judges link and click **Refresh results** to continue from the saved races. The judges page shows how many group races have been published and when the tournament was last saved. A race form that has **not** been submitted is only a draft in that browser; it is not an official result until GitHub accepts it. Draft times and penalty presses are retained in that browser for the same race while the published race and roster have not changed.
+
+## Late arrivals and no-shows
+
+Use **Manage teams** on the judges page to add a new Department, activate one awaiting a Main Driver, restore a previously removed team, or remove a no-show. Choose the group for an addition; the smallest open group is selected first. Each group is capped at 20 drivers and must keep at least two. Roster changes require an approved judge to review and create the prepared GitHub issue. They can only affect groups that have not started, so published race results cannot be silently reassigned. Refresh the judges page after a roster change is accepted.
+
+## Emergency score reset
+
+The reset control is collapsed at the bottom of the judges page. It **only clears scores, penalties and group-start locks**; it keeps the current team roster and draw. To reset, type the exact tournament-specific phrase, tick the acknowledgement, create the prepared GitHub issue, and then have the **repository owner** post the exact confirmation phrase requested in the issue comment. Creating the issue alone changes nothing. A reset request is rejected if any tournament data changes before the owner's confirmation is processed. A completed reset creates a new tournament edition so older result links cannot refill erased scores. Earlier scores remain recoverable from GitHub commit history.
+
 ## Website
 
 - Public board: https://iiamberiibaylissii.github.io/irf-tornument/

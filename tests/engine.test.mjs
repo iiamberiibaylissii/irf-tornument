@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { parseTeams, makeTournament, parseTime, formatTime, recordTimes, setRaceDrivers, groupStandings, groupQualifiers, qualificationIssue, winner, shuffleUnstartedGroups, applyGroupDraw, markGroupStarted, groupStarted } from "../site/engine.mjs";
+import { parseTeams, makeTournament, parseTime, formatTime, recordTimes, setRaceDrivers, groupStandings, groupQualifiers, qualificationIssue, winner, shuffleUnstartedGroups, applyGroupDraw, markGroupStarted, groupStarted, addTeam, removeTeam, resetScores } from "../site/engine.mjs";
 
 function teams(count) {
   return Array.from({ length: count }, (_, i) => ({ id: `t${i + 1}`, name: `Team ${i + 1}`, drivers: [`Driver ${i + 1}`], backupDrivers: [`Backup ${i + 1}`] }));
@@ -70,6 +70,58 @@ test("manual penalty buttons add exactly 0.1 or 0.2 seconds to official times", 
   assert.deepEqual(race.penalties[ids[0]], [100, 200, 100]);
   assert.equal(groupStandings(next.groups[0])[0].id, ids[1]);
   assert.throws(() => recordTimes(state, "group", 0, 0, values, null, { [ids[0]]: [300] }), /Only 0.1 and 0.2/);
+});
+
+test("late arrivals can join an unstarted group and removed teams can return", () => {
+  let state = makeTournament("Cup", teams(23));
+  const originalLength = state.groups[2].teamIds.length;
+  state = addTeam(state, { name: "New Department", mainDriver: "New Driver", backupDrivers: ["Reserve"], groupIndex: 2 });
+  assert.equal(state.groups[2].teamIds.length, originalLength + 1);
+  const added = state.teams.find(team => team.name === "New Department");
+  assert.deepEqual(added.backupDrivers, ["Reserve"]);
+  state = removeTeam(state, { teamId: added.id, groupIndex: 2 });
+  assert.equal(state.groups[2].teamIds.length, originalLength);
+  assert.equal(state.teams.some(team => team.id === added.id), false);
+  assert.equal(state.inactiveTeams.at(-1).name, "New Department");
+  state = addTeam(state, { name: "New Department", mainDriver: "New Driver", backupDrivers: [], groupIndex: 2 });
+  assert.equal(state.inactiveTeams.length, 0);
+  assert.notEqual(state.teams.at(-1).id, added.id);
+});
+
+test("an awaiting Department moves from the pending list onto the grid", () => {
+  const state = makeTournament("Cup", teams(6));
+  state.pendingTeams = [{ name: "Awaiting" }];
+  const next = addTeam(state, { name: "Awaiting", mainDriver: "NewDriver", groupIndex: 2 });
+  assert.equal(next.pendingTeams.length, 0);
+  assert.equal(next.teams.at(-1).name, "Awaiting");
+  assert.equal(next.groups[2].teamIds.length, 3);
+});
+
+test("roster changes reject started groups, duplicate names, and server overflow", () => {
+  let state = makeTournament("Cup", teams(23));
+  assert.throws(() => addTeam(state, { name: state.teams[0].name, mainDriver: "Someone", groupIndex: 2 }), /already on the grid/);
+  state = markGroupStarted(state, 0);
+  assert.throws(() => removeTeam(state, { teamId: state.groups[0].teamIds[0], groupIndex: 0 }), /not started/);
+  assert.throws(() => addTeam(state, { name: "Late", mainDriver: "Driver", groupIndex: 0 }), /not started/);
+  const full = makeTournament("Full", teams(60));
+  assert.throws(() => addTeam(full, { name: "Overflow", mainDriver: "Driver", groupIndex: 0 }), /20-driver/);
+});
+
+test("score reset clears every race and lock while retaining the roster and draw", () => {
+  let state = makeTournament("Cup", teams(9));
+  const roster = structuredClone(state.teams);
+  const draw = state.groups.map(group => [...group.teamIds]);
+  state = markGroupStarted(state, 1);
+  const ids = state.groups[0].teamIds;
+  state = recordTimes(state, "group", 0, 0, Object.fromEntries(ids.map(id => [id, "1:00.000"])));
+  const oldEdition = state.edition;
+  state = resetScores(state);
+  assert.notEqual(state.edition, oldEdition);
+  assert.deepEqual(state.teams, roster);
+  assert.deepEqual(state.groups.map(group => group.teamIds), draw);
+  assert.ok(state.groups.every(group => !groupStarted(group) && group.races.every(race => race.times === null)));
+  assert.equal(state.finale, null);
+  assert.equal(state.resetCount, 1);
 });
 
 test("lowest total over five races sends two from each group to the finale", () => {

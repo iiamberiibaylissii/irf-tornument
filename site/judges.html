@@ -14,17 +14,19 @@
     <div class="header-right"><span class="judge-badge">JUDGES ACCESS</span><a class="text-link" href="./">Public board ↗</a></div>
   </header>
   <main class="shell judges-main">
-    <section class="page-intro"><div class="eyebrow"><span class="eyebrow-line"></span> OFFICIALS' DESK</div><h1>RUN THE <em>RACE.</em></h1><p>Enter each driver’s official time. The two lowest five-race totals in each group reach the finale.</p></section>
+    <section class="page-intro"><div class="eyebrow"><span class="eyebrow-line"></span> OFFICIALS' DESK</div><h1>RUN THE <em>RACE.</em></h1><p>Enter each driver’s official time. The two lowest five-race totals in each group reach the finale. Published results stay saved between race days.</p></section>
     <section id="notice" class="notice hidden" role="status"></section>
     <section class="panel simple-access"><div class="panel-head"><div><span class="kicker">HOW TO SUBMIT</span><h2>Three simple steps</h2></div><span class="status-pill connected">NO ACCESS KEY NEEDED</span></div>
       <div class="steps"><div><b>1</b><span>Choose a group and race below.</span></div><div><b>2</b><span>Enter each game time, choose substitutes, and tap +0.1s or +0.2s for infractions.</span></div><div><b>3</b><span>Review on GitHub and click <strong>Create</strong>. Your result is checked and published automatically.</span></div></div>
       <p class="muted">Sign in to your GitHub account when asked. The organizer must have added your GitHub username to the approved judges list. You do not need to create or paste an access token.</p>
     </section>
-    <section class="control-strip"><div><span class="kicker">TOURNAMENT</span><h2 id="active-name">Loading the grid…</h2><span id="active-detail" class="muted"></span></div><button class="button button-ghost" id="refresh">↻ Refresh results</button></section>
+    <section class="control-strip"><div><span class="kicker">TOURNAMENT</span><h2 id="active-name">Loading the grid…</h2><span id="active-detail" class="muted"></span><span id="saved-status" class="saved-status"></span></div><button class="button button-ghost" id="refresh">↻ Refresh results</button></section>
     <section id="draw-panel" class="panel draw-panel"></section>
     <section id="pending-panel" class="hidden"></section>
+    <section id="roster-panel" class="panel roster-panel"></section>
     <div id="winner-panel"></div>
     <div id="rounds" class="rounds"></div>
+    <section id="reset-panel" class="panel reset-panel"></section>
   </main>
   <footer class="shell footer"><span>RACE CONTROL</span><span>Officials' desk</span></footer>
   <script src="config.js"></script>

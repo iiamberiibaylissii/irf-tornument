@@ -39,7 +39,7 @@ export function makeTournament(name, teams, finalRaces = 1) {
   return {
     version: 2, edition: crypto.randomUUID(), name: cleanName(name) || "Racing Tournament", serverCapacity: SERVER_CAPACITY,
     qualifyingRaces: GROUP_RACES, qualifiersPerGroup: QUALIFIERS_PER_GROUP,
-    finalRaces: Number(finalRaces), teams, groups, finale: null,
+    finalRaces: Number(finalRaces), teams, groups, finale: null, inactiveTeams: [],
     updatedAt: new Date().toISOString()
   };
 }
@@ -118,6 +118,58 @@ export function markGroupStarted(state, groupIndex) {
   if (!group || groupStarted(group)) throw new Error("This group has already started or does not exist.");
   const next = structuredClone(state);
   next.groups[groupIndex].startedAt = new Date().toISOString();
+  next.updatedAt = new Date().toISOString();
+  return next;
+}
+
+export function addTeam(state, { name, mainDriver, backupDrivers = [], groupIndex }) {
+  const group = state.groups[groupIndex];
+  if (!group || !Number.isInteger(groupIndex) || groupStarted(group)) throw new Error("Choose a group that has not started.");
+  if (group.teamIds.length >= SERVER_CAPACITY) throw new Error("This group has reached the 20-driver server limit.");
+  const teamName = cleanName(name), main = cleanName(mainDriver);
+  if (!teamName || !main || teamName.length > 80 || main.length > 80) throw new Error("Enter a Department and Main Driver, each under 80 characters.");
+  if (!Array.isArray(backupDrivers) || backupDrivers.length > 3) throw new Error("Enter no more than three backup drivers.");
+  const backups = backupDrivers.map(cleanName);
+  if (backups.some(driver => !driver || driver.length > 80) ||
+      new Set([main, ...backups].map(driver => driver.toLocaleLowerCase())).size !== backups.length + 1) {
+    throw new Error("Backup drivers must have distinct names under 80 characters.");
+  }
+  if (state.teams.some(team => team.name.toLocaleLowerCase() === teamName.toLocaleLowerCase())) throw new Error("That Department is already on the grid.");
+  const next = structuredClone(state);
+  next.pendingTeams = (next.pendingTeams || []).filter(team => team.name.toLocaleLowerCase() !== teamName.toLocaleLowerCase());
+  next.inactiveTeams = (next.inactiveTeams || []).filter(team => team.name.toLocaleLowerCase() !== teamName.toLocaleLowerCase());
+  const id = `t-${crypto.randomUUID()}`;
+  next.teams.push({ id, name: teamName, drivers: [main], backupDrivers: backups });
+  next.groups[groupIndex].teamIds.push(id);
+  next.updatedAt = new Date().toISOString();
+  return next;
+}
+
+export function removeTeam(state, { teamId, groupIndex }) {
+  const group = state.groups[groupIndex];
+  if (!group || !Number.isInteger(groupIndex) || groupStarted(group)) throw new Error("Teams can only be removed from a group that has not started.");
+  if (!group.teamIds.includes(teamId)) throw new Error("This team is no longer in that group.");
+  if (group.teamIds.length <= QUALIFIERS_PER_GROUP) throw new Error("At least two teams must remain in every group.");
+  const next = structuredClone(state);
+  const team = next.teams.find(item => item.id === teamId);
+  if (!team) throw new Error("Team not found.");
+  next.groups[groupIndex].teamIds = next.groups[groupIndex].teamIds.filter(id => id !== teamId);
+  next.teams = next.teams.filter(item => item.id !== teamId);
+  next.inactiveTeams ||= [];
+  next.inactiveTeams.push({ ...team, previousGroupIndex: groupIndex, removedAt: new Date().toISOString() });
+  next.updatedAt = new Date().toISOString();
+  return next;
+}
+
+export function resetScores(state) {
+  const next = structuredClone(state);
+  next.edition = crypto.randomUUID();
+  next.groups.forEach(group => {
+    group.startedAt = null;
+    group.races = Array.from({ length: GROUP_RACES }, (_, index) => newRace(index + 1));
+  });
+  next.finale = null;
+  next.resetCount = (next.resetCount || 0) + 1;
   next.updatedAt = new Date().toISOString();
   return next;
 }

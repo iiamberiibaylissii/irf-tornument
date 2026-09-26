@@ -13,14 +13,14 @@ const payload = {
   expectedRaceTimes: null, values, selections
 };
 
-async function runSubmission({ login = "owner", association = "OWNER", submitted = payload, current = fixture, action = "race" } = {}) {
+async function runSubmission({ login = "owner", association = "OWNER", submitted = payload, current = fixture, action = "race", commentEvent = null, issueState = "open" } = {}) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "race-submission-"));
   const eventPath = path.join(directory, "event.json");
   const issue = {
-    number: 42, title: action === "draw" ? "[Group draw] Shuffle unstarted groups" : action === "lock" ? "[Group started] Group A" : "[Race result] Group A race 1", user: { login }, author_association: association,
-    body: `Race control\n\n<!-- ${action === "race" ? "RACE_CONTROL_RESULT_V1" : "RACE_CONTROL_GROUP_ACTION_V1"}\n${JSON.stringify(submitted)}\n-->`
+    number: 42, state: issueState, title: action === "draw" ? "[Group draw] Shuffle unstarted groups" : action === "lock" ? "[Group started] Group A" : action === "roster" ? "[Team roster] Update" : action === "reset" ? "[Tournament reset] Cup" : "[Race result] Group A race 1", user: { login }, author_association: association,
+    body: `Race control\n\n<!-- ${action === "race" ? "RACE_CONTROL_RESULT_V1" : action === "draw" || action === "lock" ? "RACE_CONTROL_GROUP_ACTION_V1" : "RACE_CONTROL_ADMIN_V1"}\n${JSON.stringify(submitted)}\n-->`
   };
-  fs.writeFileSync(eventPath, JSON.stringify({ issue }));
+  fs.writeFileSync(eventPath, JSON.stringify({ issue, ...(commentEvent ? { comment: commentEvent } : {}) }));
   const savedEnvironment = {
     GITHUB_EVENT_PATH: process.env.GITHUB_EVENT_PATH,
     GITHUB_REPOSITORY: process.env.GITHUB_REPOSITORY,
@@ -107,6 +107,85 @@ test("approved judge can lock a group before its first result", async () => {
   const put = result.calls.find(call => call.method === "PUT");
   const updated = JSON.parse(Buffer.from(put.body.content, "base64").toString("utf8"));
   assert.ok(updated.groups[0].startedAt);
+});
+
+test("approved roster change adds a late team and removes an absent one", async () => {
+  const addition = { action: "add-team", edition: fixture.edition, expectedUpdatedAt: fixture.updatedAt,
+    team: { name: "Late Department", mainDriver: "LateDriver", backupDrivers: [] }, groupIndex: 2 };
+  const added = await runSubmission({ submitted: addition, action: "roster" });
+  assert.equal(added.exitCode, 0);
+  const addPut = added.calls.find(call => call.method === "PUT");
+  const addedState = JSON.parse(Buffer.from(addPut.body.content, "base64").toString("utf8"));
+  assert.equal(addedState.teams.length, fixture.teams.length + 1);
+  assert.equal(addedState.groups[2].teamIds.length, fixture.groups[2].teamIds.length + 1);
+  const removal = { action: "remove-team", edition: fixture.edition, expectedUpdatedAt: fixture.updatedAt,
+    teamId: ids[0], groupIndex: 0 };
+  const removed = await runSubmission({ submitted: removal, action: "roster" });
+  assert.equal(removed.exitCode, 0);
+  const removePut = removed.calls.find(call => call.method === "PUT");
+  const removedState = JSON.parse(Buffer.from(removePut.body.content, "base64").toString("utf8"));
+  assert.equal(removedState.teams.length, fixture.teams.length - 1);
+  assert.equal(removedState.inactiveTeams.at(-1).id, ids[0]);
+});
+
+test("stale roster issue cannot overwrite a newer result", async () => {
+  const current = structuredClone(fixture);
+  current.updatedAt = new Date(Date.now() + 1000).toISOString();
+  const submitted = { action: "remove-team", edition: fixture.edition, expectedUpdatedAt: fixture.updatedAt,
+    teamId: ids[0], groupIndex: 0 };
+  const result = await runSubmission({ submitted, action: "roster", current });
+  assert.equal(result.exitCode, 1);
+  assert.equal(result.calls.some(call => call.method === "PUT"), false);
+});
+
+test("reset request waits for a separate owner confirmation and preserves scores", async () => {
+  const submitted = { action: "reset-request", edition: fixture.edition, expectedUpdatedAt: fixture.updatedAt };
+  const result = await runSubmission({ submitted, action: "reset" });
+  assert.equal(result.exitCode, 0);
+  assert.equal(result.calls.some(call => call.method === "PUT" || call.method === "PATCH"), false);
+  assert.ok(result.calls.some(call => call.method === "POST" && call.body.body.includes(`CONFIRM RESET ${fixture.edition}`)));
+});
+
+test("an approved judge who is not the repository owner cannot request a reset", async () => {
+  const submitted = { action: "reset-request", edition: fixture.edition, expectedUpdatedAt: fixture.updatedAt };
+  const result = await runSubmission({ submitted, action: "reset", login: "judge-one", association: "COLLABORATOR" });
+  assert.equal(result.exitCode, 1);
+  assert.equal(result.calls.some(call => call.method === "PUT"), false);
+});
+
+test("only the issue's owner can confirm a reset, and only with the exact phrase", async () => {
+  const submitted = { action: "reset-request", edition: fixture.edition, expectedUpdatedAt: fixture.updatedAt };
+  const validComment = { user: { login: "owner" }, author_association: "OWNER", body: `CONFIRM RESET ${fixture.edition}` };
+  const accepted = await runSubmission({ submitted, action: "reset", commentEvent: validComment });
+  assert.equal(accepted.exitCode, 0);
+  const put = accepted.calls.find(call => call.method === "PUT");
+  const reset = JSON.parse(Buffer.from(put.body.content, "base64").toString("utf8"));
+  assert.notEqual(reset.edition, fixture.edition);
+  assert.deepEqual(reset.groups.map(group => group.teamIds), fixture.groups.map(group => group.teamIds));
+  const wrong = await runSubmission({ submitted, action: "reset", commentEvent: { ...validComment, body: "please reset" } });
+  assert.equal(wrong.exitCode, 1);
+  assert.equal(wrong.calls.some(call => call.method === "PUT"), false);
+  const stranger = await runSubmission({ submitted, action: "reset", commentEvent: { ...validComment, user: { login: "stranger" } } });
+  assert.equal(stranger.exitCode, 1);
+  assert.equal(stranger.calls.some(call => call.method === "PUT"), false);
+});
+
+test("owner reset confirmation is refused after tournament changes", async () => {
+  const submitted = { action: "reset-request", edition: fixture.edition, expectedUpdatedAt: fixture.updatedAt };
+  const current = structuredClone(fixture);
+  current.updatedAt = new Date(Date.now() + 1000).toISOString();
+  const result = await runSubmission({ submitted, action: "reset", current,
+    commentEvent: { user: { login: "owner" }, author_association: "OWNER", body: `CONFIRM RESET ${fixture.edition}` } });
+  assert.equal(result.exitCode, 1);
+  assert.equal(result.calls.some(call => call.method === "PUT"), false);
+});
+
+test("a closed reset request cannot clear scores", async () => {
+  const submitted = { action: "reset-request", edition: fixture.edition, expectedUpdatedAt: fixture.updatedAt };
+  const result = await runSubmission({ submitted, action: "reset", issueState: "closed",
+    commentEvent: { user: { login: "owner" }, author_association: "OWNER", body: `CONFIRM RESET ${fixture.edition}` } });
+  assert.equal(result.exitCode, 1);
+  assert.equal(result.calls.some(call => call.method === "PUT"), false);
 });
 
 test("unapproved GitHub account cannot publish a result", async () => {
