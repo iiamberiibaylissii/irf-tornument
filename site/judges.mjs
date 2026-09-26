@@ -1,4 +1,4 @@
-import { recordTimes, addTeam, removeTeam, teamMap, formatTime, parseTime, groupStarted, shuffleUnstartedGroups, qualificationIssue, finalTieIssue } from "./engine.mjs";
+import { recordTimes, addTeam, removeTeam, teamMap, formatTime, parseTime, groupStarted, shuffleUnstartedGroups, qualificationIssue, finalTieIssue } from "./engine.mjs?v=20260926-2";
 import { escapeHtml, groupCard, finaleCard, championCard, pendingCard } from "./render.mjs";
 
 const $ = id => document.getElementById(id);
