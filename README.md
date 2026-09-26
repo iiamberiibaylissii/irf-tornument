@@ -1,0 +1,44 @@
+# IRF Racing Tournament
+
+A GitHub Pages tournament board with a separate judges page. The starting roster is loaded from the [IRF race team sheet](https://docs.google.com/spreadsheets/d/1mRMH_qbFPpdQ7RjJJYKD-PuHKDZqrwQWfihtoj4Nt_o/edit?gid=0#gid=0). `Department` is the team name. `Main Driver` races by default, and `Backup #1–3` can be chosen as substitutes for an individual race.
+
+## Tournament rules
+
+- **23 drivers** start in three groups of **8, 8 and 7**. Each group is below the 20-player server limit. Ten departments without a Main Driver are listed as pending and are outside the grid.
+- Each group runs **five timed qualifying races**. An official time is entered for every driver in each race using `m:ss.mmm` or `seconds.mmm`.
+- The five times are **added**. The **two lowest total times from each group** qualify for the six-driver finale.
+- The finale is currently set to **one timed race**. The lowest finale time wins. The engine also supports a five-race finale if the organizer decides to use one.
+- An exact tie at the qualifying cutoff or for the championship is flagged. The site does not choose an unapproved tiebreaker.
+
+Judges may submit a corrected time. If a correction changes the six finalists, existing finale results are cleared. GitHub commit history keeps earlier versions.
+
+## Publish on GitHub
+
+1. Create a **public** GitHub repository, for example `racing-tournament`, with `main` as its default branch. Keep **Issues** and **Actions** enabled.
+2. Upload all the files in this folder, preserving `site`, `scripts`, `config`, `tests`, and `.github/workflows`. Do not upload the parent `outputs` folder.
+3. In **Settings → Pages**, set **Source** to **GitHub Actions**. The included workflows deploy the site and process judges' results.
+4. The public board will be `https://YOUR-NAME.github.io/racing-tournament/`. The separate judges link will be `https://YOUR-NAME.github.io/racing-tournament/judges.html`.
+5. For a custom domain, set `owner` and `repo` in `site/config.js` so the judges page opens the correct GitHub repository.
+
+## Approve judges
+
+Edit `config/judges.json` and put each judge’s **GitHub username** in the `usernames` list, for example:
+
+```json
+{ "usernames": ["judge-one", "judge-two"] }
+```
+
+The repository owner can also submit. Judges need a GitHub account, but they **do not need a personal access token or repository write access**. The approved usernames are checked by GitHub Actions when each result is submitted. Keep the judges page link within the officiating team; the link itself is not a password. Results are accepted only from approved GitHub accounts.
+
+## Judge workflow
+
+1. Open the separate judges link and select the group and race.
+2. Enter each driver’s official time and choose a backup if that driver raced instead.
+3. Click **Review & submit on GitHub**. The next page is prefilled. Sign in to GitHub if asked, check the times, and click **Create**.
+4. GitHub posts a confirmation on that submission and publishes the updated public board shortly afterward. Refresh the judges page before preparing another race so it uses the latest results.
+
+The submission is a GitHub issue containing race times. It is public like the tournament board. A workflow validates the submitting username and the race, saves `site/data/tournament.json`, comments with the outcome, and closes successful submissions. If the same race changed since the judge opened the page, the workflow refuses to overwrite it and asks the judge to refresh.
+
+## Test locally
+
+Run `npm test` from this folder. To preview, serve the `site` directory with a local static server. The final GitHub submission link only works once the project is published in a repository.

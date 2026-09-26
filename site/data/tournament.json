@@ -1,0 +1,379 @@
+{
+  "version": 2,
+  "edition": "irf-2026-09-26-1",
+  "name": "IRF Racing Tournament",
+  "serverCapacity": 20,
+  "qualifyingRaces": 5,
+  "qualifiersPerGroup": 2,
+  "finalRaces": 1,
+  "teams": [
+    {
+      "id": "t1",
+      "name": "MoA",
+      "drivers": [
+        "SirCaptainEthan"
+      ],
+      "backupDrivers": [
+        "smellypies",
+        "iiEvaqx"
+      ]
+    },
+    {
+      "id": "t2",
+      "name": "MoPHEM",
+      "drivers": [
+        "SeNaNpAsA2010"
+      ],
+      "backupDrivers": []
+    },
+    {
+      "id": "t3",
+      "name": "MoCS",
+      "drivers": [
+        "adverpoo"
+      ],
+      "backupDrivers": [
+        "soIr3n"
+      ]
+    },
+    {
+      "id": "t4",
+      "name": "MoL",
+      "drivers": [
+        "Monkey2747"
+      ],
+      "backupDrivers": [
+        "Octo752"
+      ]
+    },
+    {
+      "id": "t5",
+      "name": "MoJ",
+      "drivers": [
+        "ibeyeeting767"
+      ],
+      "backupDrivers": []
+    },
+    {
+      "id": "t6",
+      "name": "ISKRA",
+      "drivers": [
+        "ragnarock_dh"
+      ],
+      "backupDrivers": [
+        "Qwertyintent"
+      ]
+    },
+    {
+      "id": "t7",
+      "name": "MoE",
+      "drivers": [
+        "rockyzius"
+      ],
+      "backupDrivers": [
+        "Camparite"
+      ]
+    },
+    {
+      "id": "t8",
+      "name": "MoFA",
+      "drivers": [
+        "FortniteDab96"
+      ],
+      "backupDrivers": []
+    },
+    {
+      "id": "t9",
+      "name": "MJL",
+      "drivers": [
+        "ondra789987"
+      ],
+      "backupDrivers": [
+        "kubix123987"
+      ]
+    },
+    {
+      "id": "t10",
+      "name": "OCM",
+      "drivers": [
+        "roblox_user_32248047"
+      ],
+      "backupDrivers": []
+    },
+    {
+      "id": "t11",
+      "name": "MTA",
+      "drivers": [
+        "BossJoker_30"
+      ],
+      "backupDrivers": [
+        "OliB85471"
+      ]
+    },
+    {
+      "id": "t12",
+      "name": "98th",
+      "drivers": [
+        "meneerswabbers"
+      ],
+      "backupDrivers": []
+    },
+    {
+      "id": "t13",
+      "name": "24th",
+      "drivers": [
+        "SteveRogers7792"
+      ],
+      "backupDrivers": [
+        "MisterMac25",
+        "PIRIpiriFearless",
+        "pillendoknick"
+      ]
+    },
+    {
+      "id": "t14",
+      "name": "NDD",
+      "drivers": [
+        "Boom_baddy"
+      ],
+      "backupDrivers": []
+    },
+    {
+      "id": "t15",
+      "name": "MP",
+      "drivers": [
+        "Mxybe_Stephie"
+      ],
+      "backupDrivers": []
+    },
+    {
+      "id": "t16",
+      "name": "RG",
+      "drivers": [
+        "Vlad_Sakoda"
+      ],
+      "backupDrivers": [
+        "itsinvii"
+      ]
+    },
+    {
+      "id": "t17",
+      "name": "BDA",
+      "drivers": [
+        "Mayorofmyhome1"
+      ],
+      "backupDrivers": []
+    },
+    {
+      "id": "t18",
+      "name": "QM",
+      "drivers": [
+        "aquanthea"
+      ],
+      "backupDrivers": [
+        "Lava_Wars6829"
+      ]
+    },
+    {
+      "id": "t19",
+      "name": "GA",
+      "drivers": [
+        "Alvarinxi0115"
+      ],
+      "backupDrivers": []
+    },
+    {
+      "id": "t20",
+      "name": "Server Moderators",
+      "drivers": [
+        "LiamSMod"
+      ],
+      "backupDrivers": [
+        "stb_wr"
+      ]
+    },
+    {
+      "id": "t21",
+      "name": "FS",
+      "drivers": [
+        "witherking2334"
+      ],
+      "backupDrivers": []
+    },
+    {
+      "id": "t22",
+      "name": "Toter",
+      "drivers": [
+        "cakeandjoe123"
+      ],
+      "backupDrivers": []
+    },
+    {
+      "id": "t23",
+      "name": "BOLSHEVIKS",
+      "drivers": [
+        "DAVE_087416"
+      ],
+      "backupDrivers": []
+    }
+  ],
+  "groups": [
+    {
+      "id": "g1",
+      "name": "Group A",
+      "teamIds": [
+        "t1",
+        "t4",
+        "t7",
+        "t10",
+        "t13",
+        "t16",
+        "t19",
+        "t22"
+      ],
+      "races": [
+        {
+          "number": 1,
+          "times": null,
+          "driverSelections": {}
+        },
+        {
+          "number": 2,
+          "times": null,
+          "driverSelections": {}
+        },
+        {
+          "number": 3,
+          "times": null,
+          "driverSelections": {}
+        },
+        {
+          "number": 4,
+          "times": null,
+          "driverSelections": {}
+        },
+        {
+          "number": 5,
+          "times": null,
+          "driverSelections": {}
+        }
+      ]
+    },
+    {
+      "id": "g2",
+      "name": "Group B",
+      "teamIds": [
+        "t2",
+        "t5",
+        "t8",
+        "t11",
+        "t14",
+        "t17",
+        "t20",
+        "t23"
+      ],
+      "races": [
+        {
+          "number": 1,
+          "times": null,
+          "driverSelections": {}
+        },
+        {
+          "number": 2,
+          "times": null,
+          "driverSelections": {}
+        },
+        {
+          "number": 3,
+          "times": null,
+          "driverSelections": {}
+        },
+        {
+          "number": 4,
+          "times": null,
+          "driverSelections": {}
+        },
+        {
+          "number": 5,
+          "times": null,
+          "driverSelections": {}
+        }
+      ]
+    },
+    {
+      "id": "g3",
+      "name": "Group C",
+      "teamIds": [
+        "t3",
+        "t6",
+        "t9",
+        "t12",
+        "t15",
+        "t18",
+        "t21"
+      ],
+      "races": [
+        {
+          "number": 1,
+          "times": null,
+          "driverSelections": {}
+        },
+        {
+          "number": 2,
+          "times": null,
+          "driverSelections": {}
+        },
+        {
+          "number": 3,
+          "times": null,
+          "driverSelections": {}
+        },
+        {
+          "number": 4,
+          "times": null,
+          "driverSelections": {}
+        },
+        {
+          "number": 5,
+          "times": null,
+          "driverSelections": {}
+        }
+      ]
+    }
+  ],
+  "finale": null,
+  "updatedAt": "2026-09-26T17:21:30.378Z",
+  "pendingTeams": [
+    {
+      "name": "MoIA"
+    },
+    {
+      "name": "IC"
+    },
+    {
+      "name": "3GT"
+    },
+    {
+      "name": "ACS"
+    },
+    {
+      "name": "STAVKA"
+    },
+    {
+      "name": "CoA"
+    },
+    {
+      "name": "Commissariat"
+    },
+    {
+      "name": "EZIC"
+    },
+    {
+      "name": "ARAMP"
+    },
+    {
+      "name": "CDP"
+    }
+  ],
+  "sourceSheet": "https://docs.google.com/spreadsheets/d/1mRMH_qbFPpdQ7RjJJYKD-PuHKDZqrwQWfihtoj4Nt_o/edit?gid=0#gid=0"
+}

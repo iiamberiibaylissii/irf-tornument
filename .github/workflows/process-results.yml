@@ -1,0 +1,24 @@
+name: Process race result
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  process:
+    if: startsWith(github.event.issue.title, '[Race result]')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out trusted tournament code
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Process official race submission
+        run: node scripts/process-result.mjs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}

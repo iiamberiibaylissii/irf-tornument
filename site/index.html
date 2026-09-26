@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080d18">
+  <title>Race Control · Tournament</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
+  <header class="site-header shell">
+    <div class="brand"><span class="brand-icon">◩</span><span>RACE<span class="brand-light">CONTROL</span></span></div>
+    <div class="header-right"><span class="live-dot"></span><span>TOURNAMENT HQ</span></div>
+  </header>
+  <main class="shell">
+    <section class="hero">
+      <div class="eyebrow"><span class="eyebrow-line"></span> LIVE TOURNAMENT BOARD</div>
+      <h1 id="tournament-name">THE ROAD<br>TO <em>VICTORY.</em></h1>
+      <p class="hero-sub">Three groups. Five timed races each. Six finalists. One champion.</p>
+      <div class="hero-actions"><button class="button button-primary" id="refresh">↻ &nbsp; Refresh results</button><span id="updated" class="muted">Waiting for tournament data</span></div>
+    </section>
+    <section id="notice" class="notice hidden" role="status"></section>
+    <section id="overview" class="overview"></section>
+    <section id="winner-panel"></section>
+    <section id="pending-panel"></section>
+    <section class="section-heading"><div><span class="kicker">THE GRID</span><h2>Groups & live times</h2></div><span class="section-caption">Two lowest combined times from each group advance</span></section>
+    <section id="rounds" class="rounds"></section>
+  </main>
+  <footer class="shell footer"><span>RACE CONTROL</span><span>Built for every finish line.</span></footer>
+  <script src="config.js"></script>
+  <script type="module" src="public.mjs"></script>
+</body>
+</html>
