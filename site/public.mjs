@@ -21,4 +21,3 @@ async function load() {
 
 $("refresh").addEventListener("click", load);
 load();
-setInterval(load, 60000);
